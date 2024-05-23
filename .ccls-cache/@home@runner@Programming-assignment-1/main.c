@@ -54,7 +54,6 @@ int totalPortions;
 
 int main(void) {
 
-  recipe** smoothieList;
 
 
   
