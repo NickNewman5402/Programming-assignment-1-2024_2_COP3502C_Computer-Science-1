@@ -44,27 +44,29 @@
 
 typedef struct item {
   int itemNo;
-  int portions;
+  double portions;
 } item;
 
 typedef struct recipe {
   int itemCount;
   item* itemList;
-  int totalPortions;
+  double totalPortions;
 } recipe;
 
-char** readIngredients(int *numIngredients);
-recipe* readRecipe();
-recipe** readAllRecipes(int *numRecipes);
+char** readIngredients(int *numIngredients);// done
+recipe* readRecipe();// done
+recipe** readAllRecipes(int *numRecipes);// done
 double* calculateOrder(int ingredientCount, int numSmoothies, recipe** recipeList);
 void printOrder(char** ingredientNames, double* orderList, int numIngredients);
 void freeIngredients(char** ingredientList, int numIngredients);
-//void freeRecipes(recipe** allRecipes, int numRecipes);
+void freeRecipes(recipe** allRecipes, int numRecipes);
 
 
 // Confirmed to be good as of 5/27/24 @ 10:37am
 char **readIngredients(int *numIngredients) {
 
+  printf("Enter number of ingrdients: ");
+  scanf("%d", numIngredients);
   char name[21];// creates a char array of size 20 allowing the \0 at the end of a string
   char **ingredients = (char**)malloc(sizeof(char*)*(*numIngredients)); // creates a pointer to numIngredient pointers. 
   for (int i = 0; i < *numIngredients; i++) {
@@ -79,25 +81,28 @@ char **readIngredients(int *numIngredients) {
 }
 
 // takes in number of recipes and then runs the function readRecipe
-recipe **readAllRecipes(int *numRecipes) {
+recipe** readAllRecipes(int *numRecipes) {
 
-  recipe **smoothies = (recipe**)malloc(*numRecipes * sizeof(recipe*)); // NULL was put in due to "C4700 uninitialized local variable 'smoothies' used compiler error
+  printf("\nEnter number of smoothie recipes: ");
+  scanf("%d", numRecipes);
+  recipe **smoothies = (recipe**)malloc(*numRecipes * sizeof(recipe*));
   for (int i = 0; i < *numRecipes; i++) {
     smoothies[i] = readRecipe(); // returns a recipe pointer
   }
+
   return smoothies;
 
 }
 
-// Creates a smoothie with info saved in smootie[i] created in readAllRecepies
+// Creates a smoothie with ingrdient info and ratio info saved in smootie[i] created in readAllRecepies
 recipe *readRecipe() {
 
   // sample input:
   /*
     m I1 R1 I2 R2 … Im Rm
-    m represents the number of different ingredients in the smoothie (1 ≤ m ≤ 100)
-    I1 represents the ingredient number of the first ingredient (0 ≤ I1 < n)
-    R1 represents the number of parts (ratio) of the first ingredient (1 ≤ R1 ≤ 1000) in the smoothie recipe
+    m represents the number of different ingredients in the smoothie (1 ? m ? 100)
+    I1 represents the ingredient number of the first ingredient (0 ? I1 < n)
+    R1 represents the number of parts (ratio) of the first ingredient (1 ? R1 ? 1000) in the smoothie recipe
 
     The rest of the I and R variables represent the corresponding information for the rest of the smoothie ingredients.
   */
@@ -106,7 +111,7 @@ recipe *readRecipe() {
   int numItems;
   printf("\nEnter number of items: ");
   scanf("%d", &numItems);
-  smoothie->itemCount = numItems;// m CODE IS BREAKING HERE
+  smoothie->itemCount = numItems;
   smoothie->itemList = (item*)malloc(numItems * sizeof(item));
   smoothie->totalPortions = 0;
 
@@ -114,7 +119,7 @@ recipe *readRecipe() {
     printf("Enter item [%d] name: ", i);
     scanf("%d", &smoothie->itemList[i].itemNo);// item number is storing the number to be referenced later by infredients[i]? Im
     printf("Enter ratio amout of item [%d]: ", i);
-    scanf("%d", &smoothie->itemList[i].portions);// Rm
+    scanf("%lf", &smoothie->itemList[i].portions);// Rm
     smoothie->totalPortions += smoothie->itemList[i].portions;
   }
 
@@ -123,66 +128,66 @@ recipe *readRecipe() {
 
 }
 
+double* calculateOrder(int ingredientCount/*8*/, int numSmoothies/*3*/, recipe** recipeList/*smoothieList*/) {
+
+  double* amountOfEachItem = (double*)calloc(ingredientCount, sizeof(double));
+  int numOfRecipes;
+  int recipeNum;
+  double unitInPounds;
+
+  printf("How many recipes: ");//debug
+  scanf("%d", &numOfRecipes);
+
+
+  for (int i = 0; i < numOfRecipes; i++) {
+    printf("order #%d Which recipe: ", i+1);//debug
+    scanf("%d", &recipeNum);
+    printf("order #%d Unit in pounds: ", i +1);//debug
+    scanf("%lf", &unitInPounds);
+    for (int j = 0; j < recipeList[recipeNum]->itemCount; j++) {
+        amountOfEachItem[recipeList[recipeNum]->itemList[j].itemNo] += (unitInPounds * recipeList[recipeNum]->itemList[j].portions) / recipeList[recipeNum]->totalPortions;
+      }
+    }
+
+  return amountOfEachItem;
+}
+
+void printOrder(char** ingredientNames, double* orderList, int numIngredients) {
+
+  for (int i = 0; i < numIngredients; i++) {
+    if (orderList[i] > 0) {
+      printf("%s %.6f\n", ingredientNames[i], orderList[i]);
+    }
+  }
+  printf("\n");
+}
+
 int main(void) {
 
   int numIngredients;
   int numRecipes;
   int numStores;
-  int numSmoothies;
   int numItems;
 
-  char **ingredients;
+  char **ingredientNames;
   recipe **smoothieList;
-  double **amountOfEachItem;
+  double *amountOfEachItem;
   recipe **recipeList;
 
-  /*The first line will contain a single positive integer, n (n ≤ 105 ), representing the number of possible smoothie ingredients.
-  */
-  printf("Enter number of ingrdients: ");
-  scanf("%d", &numIngredients);
-  ingredients = readIngredients(&numIngredients);
-  //Used to confirm ingredients came back to main. Up to here is confirmed as operational as of 5/27/24 @ 10:37am
-  /*
-  printf("ingrdients confirmation:\n");
-  for(int i = 0; i < numIngredients; i++){
-    printf("ingredient %d: %s\n", i+1, ingredients[i]); // this is not printing for some reason. Program crashes... This was not printing because I was writing directly to ingredients[i]. I needed to create an array names[21] and then use strcpy to copy the string into ingrdeints[i] with strcpy(ingredients[i], name);
-  }
-  */
 
+  ingredientNames = readIngredients(&numIngredients);
 
+  smoothieList = readAllRecipes(&numRecipes);
 
-
-
-  /*The following n lines will each contain a single word string of in between 1 and 20 characters (all letters, digits or underscores). The ith (0 ≤ i ≤ n-1) of these will contain the name of the ith smoothie ingredient. (Thus, the ingredients are numbered from 0 to n-1.)
-*/
-  printf("\nEnter number of smoothie recipes: ");
-  scanf("%d", &numRecipes);
-  recipeList = readAllRecipes(&numRecipes);
-
-
-
-  /********* Finished here on page 3: The following line of input will contain a single positive            integer, k (1 ≤ k ≤ 100), representing the number of stores making orders for smoothie ingredients. (Number the stores 1 to k, in the order they appear in the input.)
-  *******************/
-  printf("\nEnter number of stores: ");
+  printf("How many stores: ");
   scanf("%d", &numStores);
-  printf("\nEnter number of smoothies each store will buy: ");
-  scanf("%d", &numSmoothies);
+  for (int i = 0; i < numStores; i++) {
+    amountOfEachItem = calculateOrder(numIngredients, numRecipes, smoothieList);
+    // I can not get the amount of each item back
+    printf("List of items for store %d:\n", i+1);
+    printOrder(ingredientNames, amountOfEachItem, numIngredients);
+  }
 
-  //calculateOrder(numIngredients, numSmoothies, recipeList);// Double check these inputs...
-
-
-  /***************************************************************************************/
-
-
-
-
-
-
-  //smoothieList = readAllRecipes(&numRecipes);
-  //amountOfEachItem = calculateOrder(numIngredients, numSmoothies, smoothieList);
-  //printOrder(ingredientNames, amountOfEachItem, numIngredients);
 
   return 0;
 }
-
-/*Imported code from MSVC at 10:07pm in order to verify compile and such. I am now making it to line 166 time to implement store info*/
